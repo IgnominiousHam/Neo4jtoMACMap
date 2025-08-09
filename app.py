@@ -184,4 +184,4 @@ def vendors_in_box():
 
 if __name__ == "__main__":
     webbrowser.open("http://localhost:5000/")
-    app.run(debug=True)
+    app.run(debug=False)
