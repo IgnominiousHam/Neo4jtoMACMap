@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, s
 from neo4j import GraphDatabase
 import webbrowser
 import os
-import sys
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
