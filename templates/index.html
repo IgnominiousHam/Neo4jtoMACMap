@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Neo4j → MAC Map</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='whale.ico') }}">
+  <meta charset="utf-8" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0f172a; 
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1400px;
+      width: 98vw;
+      margin: 20px auto;
+      padding: 24px 32px 32px 32px;
+      background: #1e293b; 
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(30, 41, 59, 0.08);
+      box-sizing: border-box;
+      position: relative; 
+    }
+
+    h1 {
+      color: #fff; 
+      margin-top: 0;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #fff; 
+      margin-top: 0;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    h3 {
+      margin-top: 0;
+      color: #f1f5f9; 
+      letter-spacing: 1px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #f1f5f9; 
+    }
+
+    #macSelect {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #60a5fa;
+      background: #f0f9ff; 
+      color: #1e293b;
+      margin-bottom: 20px;
+      font-size: 1em;
+      transition: border 0.2s;
+    }
+    #macSelect:focus {
+      outline: none;
+      border: 2px solid #2563eb;
+    }
+
+    #map {
+      height: 75vh;
+      width: 100%;
+      margin-top: 20px;
+      border-radius: 12px;
+      border: 1.5px solid #cbd5e1; 
+      box-shadow: 0 2px 8px rgba(30, 41, 59, 0.06);
+    }
+
+    .main-content {
+      display: flex;
+      gap: 36px;
+      width: 100%;
+    }
+
+    .map-area {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .side-panel {
+      min-width: 240px;
+      max-width: 270px;
+      background: #334155; 
+      border-radius: 12px;
+      padding: 22px 18px;
+      box-shadow: 0 2px 8px rgba(30, 41, 59, 0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      height: fit-content;
+      margin-top: 20px;
+      border: 1.5px solid #475569; 
+      word-break: break-word;        
+      overflow-wrap: anywhere;     
+    }
+
+    .leaflet-control-layers {
+      background: #1e293b !important; 
+      color: #f1f5f9 !important;    
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(30,41,59,0.15);
+    }
+
+    .leaflet-control-layers-expanded {
+      background: #1e293b !important;
+      color: #f1f5f9 !important;
+    }
+
+    .leaflet-control-layers label {
+      color: #f1f5f9 !important;
+    }
+
+    .leaflet-control-layers-separator {
+      border-top: 1px solid #334155 !important;
+    }
+
+    #macSummary {
+      width: 100%;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    #macSummary pre {
+      white-space: pre-wrap;      
+      word-break: break-word;
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    #mapInit {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1e293b;
+      color: #60a5fa;
+      font-size: 2em;
+    }
+
+    .settings-icon {
+      position: absolute;
+      top: 32px;
+      right: 48px;
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .settings-icon .fa-gear {
+      font-size: 2em;
+      color: #bae6fd;
+      transition: color 0.2s;
+    }
+    .settings-icon:hover .fa-gear {
+      color: #60a5fa;
+    }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+  <div id="mapInit">Initializing...</div>
+  <div class="container">
+    <h1>🐋 Neo4j → MAC Map</h1>
+    <button class="settings-icon" title="Settings" onclick="window.location.href='/connect'">
+      <i class="fa-solid fa-gear"></i>
+    </button>
+    <div class="main-content">
+      <div class="map-area">
+        <div id="map"></div>
+        <button id="exportVendors" style="margin:18px auto 0 auto;display:block;padding:8px 18px;border-radius:6px;background:#60a5fa;color:#1e293b;font-weight:600;border:none;cursor:pointer;">
+          Export Bounding Box Summary
+        </button>
+      </div>
+      <div class="side-panel">
+        <label for="macInput">Enter MAC Address:</label>
+        <input list="macs" id="macInput" name="macInput" autocomplete="off" />
+        <datalist id="macs"></datalist>
+        <div id="macSummary" style="margin-top:18px; color:#f1f5f9; font-size:0.97em;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
